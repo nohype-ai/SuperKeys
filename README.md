@@ -49,8 +49,6 @@ That is ⌘↩ for Ghostty, and ⌘⇧K for a URL in Safari. Omit `command` and 
 
 Edit the file, then run `super-keys` again. The shortcuts in effect are the shortcuts in the file. If the file is missing, has no `macos` bind, or does not parse, SuperKeys removes its login agent and exits. Nothing from an older file stays registered.
 
-[`bindings.toml`](bindings.toml) in this repo is a longer example.
-
 ### Fields
 
 | field | required | |

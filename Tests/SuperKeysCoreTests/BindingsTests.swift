@@ -2,19 +2,6 @@ import Foundation
 import Testing
 @testable import SuperKeysCore
 
-@Test func catalogMatchesTheCurrentCommands() throws {
-    let bindings = try Bindings.load(contentsOf: catalogPath())
-    #expect(bindings.browser == "/Applications/Brave Browser.app")
-    #expect(bindings.macosBinds.count == 25)
-    #expect(bindings.binds.map(\.id) == expectedRows.map { String($0.split(separator: " | ")[0]) })
-    #expect(bindings.binds.allSatisfy { $0.scope.contains(.macos) })
-    #expect(!bindings.binds.contains { $0.id == "audio" })
-
-    let shortcuts = bindings.binds.map { "\($0.command)|\($0.modifiers.map(\.rawValue).joined(separator: "+"))" }
-    #expect(Set(shortcuts).count == shortcuts.count)
-    #expect(bindings.binds.map(row).joined(separator: "\n") == expectedRows.joined(separator: "\n"))
-}
-
 @Test func invalidTOMLIncludesTheLine() throws {
     let error = try #require(throws: BindingsError.self) {
         try Bindings.load("browser = '/Applications/Brave Browser.app'\n[[bind\n")
@@ -179,19 +166,6 @@ import Testing
     #expect(message.contains("Line"))
 }
 
-private func catalogPath() throws -> String {
-    var url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-    for _ in 0..<6 {
-        let candidate = url.appendingPathComponent("bindings.toml")
-        if FileManager.default.fileExists(atPath: candidate.path) {
-            return candidate.path
-        }
-        url.deleteLastPathComponent()
-    }
-    Issue.record("bindings.toml not found from \(#filePath)")
-    throw BindingsError("bindings.toml not found")
-}
-
 private func bind(action: String, command: String = "a", scope: [String] = ["macos"]) -> String {
     let scopeText = scope.map { "\"\($0)\"" }.joined(separator: ", ")
     return """
@@ -206,52 +180,3 @@ private func bind(action: String, command: String = "a", scope: [String] = ["mac
     """
 }
 
-private func row(_ bind: Bind) -> String {
-    let scopes = bind.scope.map(\.rawValue).sorted().joined(separator: ",")
-    let mods = bind.modifiers.map(\.rawValue).joined(separator: ",")
-    let modsField = mods.isEmpty ? "-" : mods
-    return "\(bind.id) | \(bind.group.rawValue) | \(scopes) | \(bind.command) | \(modsField) | \(actionText(bind.action))"
-}
-
-private func actionText(_ action: Action) -> String {
-    switch action {
-    case .launch(let app): "launch \(app)"
-    case .openURL(let url): "open-url \(url)"
-    case .finderOpen(let app): "finder-open \(app)"
-    case .finderNewFile: "finder-new-file"
-    case .shell(let argv): "shell \(argv.joined(separator: " | "))"
-    case .appleScript(let source): "applescript \(source)"
-    case .openTrash: "open-trash"
-    case .emptyTrash: "empty-trash"
-    case .sleep: "sleep"
-    case .toggleAppearance: "toggle-appearance"
-    }
-}
-
-private let expectedRows = [
-    "terminal | launch | macos,omarchy | return | command | launch /Applications/Ghostty.app",
-    "browser | launch | macos,omarchy | return | command,shift | launch /Applications/Brave Browser.app",
-    "ai-assistant | launch | macos,omarchy | a | command,shift | open-url https://grok.com",
-    "email | launch | macos,omarchy | e | command,shift | launch /System/Applications/Mail.app",
-    "finder | launch | macos,omarchy | f | command,shift | launch /System/Library/CoreServices/Finder.app",
-    "obsidian | launch | macos,omarchy | o | command,shift | launch /Applications/Obsidian.app",
-    "music | launch | macos,omarchy | m | command,shift | launch /System/Applications/Music.app",
-    "music-secondary | launch | macos,omarchy | m | command,shift,option | open-url https://music.youtube.com",
-    "passwords | launch | macos,omarchy | slash | command,shift | launch /System/Applications/Passwords.app",
-    "write | launch | macos,omarchy | w | command,shift | launch /Applications/Typora.app",
-    "youtube | launch | macos,omarchy | y | command,shift | open-url https://www.youtube.com/feed/subscriptions",
-    "develop | launch | macos,omarchy | d | command,shift | launch /Applications/Zed.app",
-    "git-client | launch | macos,omarchy | g | command,shift | launch /Applications/Fork.app",
-    "talk | launch | macos,omarchy | t | command,shift | open-url https://web.telegram.org",
-    "develop-secondary | launch | macos | d | command,shift,option | shell /bin/zsh | -c | open \"${$(xcode-select -p)%/Contents/Developer}\"",
-    "system-settings | launch | macos | s | command,shift | launch /System/Applications/System Settings.app",
-    "talk-secondary | launch | macos | t | command,shift,option | launch /Applications/WhatsApp.app",
-    "trash | launch | macos | delete | command,shift | open-trash",
-    "finder-terminal | finder | macos | return | command,control | finder-open /Applications/Ghostty.app",
-    "finder-develop | finder | macos | d | command,shift,control | finder-open /Applications/Zed.app",
-    "finder-new-file | finder | macos | f | command,shift,control | finder-new-file",
-    "finder-write | finder | macos | w | command,shift,control | finder-open /Applications/Typora.app",
-    "appearance | system | macos | d | command,control | toggle-appearance",
-    "sleep | system | macos | s | command,control | sleep",
-    "empty-trash | system | macos | delete | command,control | empty-trash",
-]
