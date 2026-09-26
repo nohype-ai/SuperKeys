@@ -9,18 +9,40 @@ struct SuperKeys {
     static let hotKeys = createHotKeys()
 
     static func main() {
+        // A launchd start must not re-register: bootout would kill this process
+        // before the new job is up. The plist passes --agent; ppid 1 covers an
+        // older plist that only stored the binary path.
+        switch Array(CommandLine.arguments.dropFirst()) {
+        case [] where LaunchAgent.startedByLaunchd():
+            runLoop()
+        case []:
+            LaunchAgent.installAndStart()
+        case ["--agent"]:
+            runLoop()
+        case ["--foreground"]:
+            LaunchAgent.unload()
+            LaunchAgent.killOthers()
+            runLoop()
+        case ["stop"]:
+            LaunchAgent.stop()
+        default:
+            fputs("usage: super-keys [stop|--foreground]\n", stderr)
+            exit(2)
+        }
+    }
+
+    static func runLoop() {
         // inspect logs via the file ~/Library/Logs/super-keys.log
         setlinebuf(stdout)
         setlinebuf(stderr)
-        
-        // get the app object
+
         print("Preparing application ...")
         let app = NSApplication.shared
-        
-        // no Dock, no menu bar
         app.setActivationPolicy(.prohibited)
-        
-        // run
+
+        // After NSApplication.shared. The static is lazy; nothing else reads it.
+        _ = hotKeys
+
         print("Waiting for key commands to process ...")
         app.run()
     }

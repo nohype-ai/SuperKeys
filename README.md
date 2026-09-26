@@ -20,6 +20,12 @@ brew install nohype-ai/tap/super-keys
 super-keys
 ```
 
-Stop it with Ctrl-C. A stack can also keep it running with a LaunchAgent. Log lines go to stdout and stderr.
+That registers a login agent and starts it under `launchd`. It comes back at login. Log: `~/Library/Logs/super-keys.log`.
 
-The first launch needs Input Monitoring, and Login Items permission if `launchd` starts it.
+```sh
+super-keys stop
+```
+
+The first launch needs Input Monitoring. macOS may also ask to allow `super-keys` as a background item.
+
+`super-keys --foreground` runs the hotkey loop in this terminal instead of under `launchd`.
