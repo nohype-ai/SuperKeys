@@ -1,37 +1,105 @@
 # SuperKeys
 
-Global hotkeys for macOS. The command is `super-keys`: it registers the shortcuts and stays running. No Dock icon, no menu bar.
+Global shortcuts for macOS, stored in one TOML file.
 
-Bindings live in `~/.config/super-keys/bindings.toml`. The first run creates that file if it is missing. Edit it, then run `super-keys` again. [`bindings.toml`](bindings.toml) in this repo is an example. A Swift change still needs a rebuild.
-
-DHH tried something similar (archived): [OMAMAC](https://github.com/omacom-io/omamac).
+⌘ is already held. You name the key, the extra modifiers, and what should happen. `super-keys` registers those shortcuts and stays out of the way: no Dock icon, no menu bar. It comes back at login.
 
 ## Install
 
 ```sh
 brew install nohype-ai/tap/super-keys
-```
-
-Apple silicon Macs on macOS 13 and newer get a bottle. Intel Macs compile from source.
-
-[MacStack](https://macstack.dev) depends on this formula, so installing MacStack installs `super-keys` too.
-
-## Run
-
-```sh
 super-keys
 ```
 
-That registers a login agent and starts it under `launchd`. It comes back at login. Log: `~/Library/Logs/super-keys.log`.
+macOS 13 or newer. Apple silicon gets a bottle. Intel Macs compile from source.
 
-```sh
-super-keys stop
+The first run creates `~/.config/super-keys/bindings.toml`. That file starts empty, so the agent does not stay running until you add a shortcut and run `super-keys` again.
+
+macOS asks for Input Monitoring the first time. It may also ask to allow `super-keys` as a background item. A shortcut that touches the front Finder window asks for Automation, once.
+
+[MacStack](https://macstack.dev) depends on this formula. Installing MacStack installs `super-keys`.
+
+## A binding
+
+```toml
+browser = '/Applications/Safari.app'
+
+[[bind]]
+id = "terminal"
+group = "launch"
+scope = ["macos"]
+command = "return"
+action = "launch"
+app = '/Applications/Ghostty.app'
+
+[[bind]]
+id = "search"
+group = "launch"
+scope = ["macos"]
+command = "k"
+modifiers = ["shift"]
+action = "open-url"
+url = 'https://kagi.com'
 ```
 
-The first launch needs Input Monitoring. macOS may also ask to allow `super-keys` as a background item.
+That is ⌘↩ for Ghostty, and ⌘⇧K for a URL in Safari.
 
-`super-keys /path/to/bindings.toml` uses that file instead of `~/.config/super-keys/bindings.toml`.
+`command` is the key: `a`, `return`, `slash`, `delete`, or any other name [HotKey](https://github.com/soffes/HotKey) accepts. `enter` is stored as `return`. `modifiers` are optional extras, and only `shift`, `option`, and `control`. ⌘ is implied. Writing `command` in `modifiers` is an error.
 
-`super-keys --foreground` runs the hotkey loop in this terminal instead of under `launchd`. Starting the agent or `--foreground` stops the other one. Two copies fight over the same shortcuts.
+Edit the file, then run `super-keys` again. The shortcuts in effect are the shortcuts in the file. If the file is missing, has no `macos` bind, or does not parse, SuperKeys removes its login agent and exits. Nothing from an older file stays registered.
 
-If the bindings file is missing, has no macOS bind, or does not parse, super-keys removes its login agent and exits. No shortcuts stay registered.
+[`bindings.toml`](bindings.toml) in this repo is a longer example.
+
+### Fields
+
+| field | required | |
+|---|---|---|
+| `id` | yes | unique name |
+| `group` | yes | `launch`, `finder`, or `system`. For your own sorting. |
+| `scope` | yes | `macos`, `omarchy`, or both. SuperKeys registers binds that include `macos`. |
+| `command` | yes | the key |
+| `modifiers` | no | `shift`, `option`, `control` |
+| `action` | yes | one of the actions below |
+| `browser` | for `open-url` | top-level app path. Omit it when no bind opens a URL. |
+
+Two binds cannot share a shortcut. A payload from a different action is an error (`app` on `sleep` is a typo).
+
+### Actions
+
+| action | payload | |
+|---|---|---|
+| `launch` | `app` | open that application |
+| `open-url` | `url` | open the URL in `browser` |
+| `finder-open` | `app` | open the front Finder folder in that application |
+| `finder-new-file` | | create `_new.md` in the front Finder folder and select it |
+| `shell` | `argv` | run a program. The first item is the executable. |
+| `applescript` | `source` | run that script |
+| `open-trash` | | open `~/.Trash` |
+| `empty-trash` | | empty the Trash |
+| `sleep` | | put the Mac to sleep |
+| `toggle-appearance` | | switch between light and dark mode |
+
+## Commands
+
+```sh
+super-keys                          # register the login agent and start it
+super-keys stop                     # stop until the next login, or the next super-keys
+super-keys --foreground             # run in this terminal instead of under launchd
+super-keys /path/to/bindings.toml   # use this file instead
+```
+
+`super-keys /path/to/bindings.toml` does not create `~/.config/super-keys/bindings.toml`.
+
+Log: `~/Library/Logs/super-keys.log`
+
+`super-keys` and `super-keys --foreground` both take the shortcuts. Starting one stops the other.
+
+```sh
+launchctl print gui/$(id -u)/ai.nohype.super-keys
+```
+
+## License
+
+[MIT](LICENSE)
+
+DHH archived a related experiment: [OMAMAC](https://github.com/omacom-io/omamac).
