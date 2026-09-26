@@ -4,7 +4,7 @@ import Foundation
 public enum BindingsFile {
     /// Written when `~/.config/super-keys/bindings.toml` does not exist yet.
     public static let emptyTemplate = """
-    # SuperKeys bindings. Command (⌘) is implicit.
+    # SuperKeys bindings. List every modifier you want, including command.
     # Add [[bind]] entries, then run `super-keys` again.
     # Shortcuts stay off until this file contains a macos bind.
 

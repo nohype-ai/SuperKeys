@@ -2,7 +2,7 @@
 
 Global shortcuts for macOS, stored in one TOML file.
 
-⌘ is already held. You name the key, the extra modifiers, and what should happen. `super-keys` registers those shortcuts and stays out of the way: no Dock icon, no menu bar. It comes back at login.
+You name the key, every modifier, and what should happen. `super-keys` registers those shortcuts and stays out of the way: no Dock icon, no menu bar. It comes back at login.
 
 ## Install
 
@@ -29,6 +29,7 @@ id = "terminal"
 group = "launch"
 scope = ["macos"]
 command = "return"
+modifiers = ["command"]
 action = "launch"
 app = '/Applications/Ghostty.app'
 
@@ -37,14 +38,14 @@ id = "search"
 group = "launch"
 scope = ["macos"]
 command = "k"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "open-url"
 url = 'https://kagi.com'
 ```
 
-That is ⌘↩ for Ghostty, and ⌘⇧K for a URL in Safari.
+That is ⌘↩ for Ghostty, and ⌘⇧K for a URL in Safari. Omit `command` and the shortcut does not use ⌘.
 
-`command` is the key: `a`, `return`, `slash`, `delete`, or any other name [HotKey](https://github.com/soffes/HotKey) accepts. `enter` is stored as `return`. `modifiers` are optional extras, and only `shift`, `option`, and `control`. ⌘ is implied. Writing `command` in `modifiers` is an error.
+`command` is the key: `a`, `return`, `slash`, `delete`, or any other name [HotKey](https://github.com/soffes/HotKey) accepts. `enter` is stored as `return`. `modifiers` are optional. Each one you want is listed: `command`, `shift`, `option`, `control`.
 
 Edit the file, then run `super-keys` again. The shortcuts in effect are the shortcuts in the file. If the file is missing, has no `macos` bind, or does not parse, SuperKeys removes its login agent and exits. Nothing from an older file stays registered.
 
@@ -58,7 +59,7 @@ Edit the file, then run `super-keys` again. The shortcuts in effect are the shor
 | `group` | yes | `launch`, `finder`, or `system`. For your own sorting. |
 | `scope` | yes | `macos`, `omarchy`, or both. SuperKeys registers binds that include `macos`. |
 | `command` | yes | the key |
-| `modifiers` | no | `shift`, `option`, `control` |
+| `modifiers` | no | `command`, `shift`, `option`, `control` |
 | `action` | yes | one of the actions below |
 | `browser` | for `open-url` | top-level app path. Omit it when no bind opens a URL. |
 

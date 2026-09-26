@@ -125,9 +125,10 @@ struct SuperKeys {
     }
 
     private static func eventModifiers(_ modifiers: [Modifier]) -> NSEvent.ModifierFlags {
-        var flags: NSEvent.ModifierFlags = [.command]
+        var flags: NSEvent.ModifierFlags = []
         for modifier in modifiers {
             switch modifier {
+            case .command: flags.insert(.command)
             case .shift: flags.insert(.shift)
             case .option: flags.insert(.option)
             case .control: flags.insert(.control)

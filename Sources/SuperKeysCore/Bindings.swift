@@ -49,7 +49,7 @@ public enum Scope: String, Equatable, Sendable, Hashable {
 }
 
 public enum Modifier: String, Equatable, Sendable, Hashable {
-    case shift, option, control
+    case command, shift, option, control
 }
 
 public enum Action: Equatable, Sendable {
@@ -77,7 +77,6 @@ private let bindKeys: Set = [
     "app", "url", "argv", "source",
 ]
 private let payloadKeys = ["app", "url", "argv", "source"]
-private let implicitModifiers: Set = ["command", "super", "cmd"]
 
 
 private struct Shortcut: Hashable {
@@ -228,11 +227,6 @@ private func readModifiers(_ table: TOMLTable, label: String, problems: inout [S
     var modifiers: [Modifier] = []
     var ok = true
     for name in names {
-        if implicitModifiers.contains(name) {
-            problems.append("\(label): command is implicit; do not put '\(name)' in modifiers")
-            ok = false
-            continue
-        }
         guard let modifier = Modifier(rawValue: name) else {
             problems.append("\(label): unknown modifier '\(name)'")
             ok = false
@@ -349,9 +343,10 @@ private func readStrings(_ table: TOMLTable, _ key: String, problems: inout [Str
 
 private func rank(_ modifier: Modifier) -> Int {
     switch modifier {
-    case .shift: 0
-    case .option: 1
-    case .control: 2
+    case .command: 0
+    case .shift: 1
+    case .option: 2
+    case .control: 3
     }
 }
 

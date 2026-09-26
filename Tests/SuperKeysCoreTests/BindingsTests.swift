@@ -83,14 +83,21 @@ import Testing
     #expect(error.message.contains("sleep does not take app"))
 }
 
-@Test func commandModifierIsRejected() throws {
-    let error = try #require(throws: BindingsError.self) {
-        try Bindings.load(bind(action: """
-        modifiers = ["command"]
-        action = "sleep"
-        """))
-    }
-    #expect(error.message.contains("command is implicit"))
+@Test func modifiersAreExplicit() throws {
+    let plain = try Bindings.load(bind(action: "action = 'sleep'"))
+    #expect(plain.binds.first?.modifiers == [])
+
+    let shifted = try Bindings.load(bind(action: """
+    modifiers = ["shift"]
+    action = "sleep"
+    """))
+    #expect(shifted.binds.first?.modifiers == [.shift])
+
+    let commanded = try Bindings.load(bind(action: """
+    modifiers = ["shift", "command"]
+    action = "sleep"
+    """))
+    #expect(commanded.binds.first?.modifiers == [.command, .shift])
 }
 
 @Test func enterIsStoredAsReturn() throws {
@@ -222,29 +229,29 @@ private func actionText(_ action: Action) -> String {
 }
 
 private let expectedRows = [
-    "terminal | launch | macos,omarchy | return | - | launch /Applications/Ghostty.app",
-    "browser | launch | macos,omarchy | return | shift | launch /Applications/Brave Browser.app",
-    "ai-assistant | launch | macos,omarchy | a | shift | open-url https://grok.com",
-    "email | launch | macos,omarchy | e | shift | launch /System/Applications/Mail.app",
-    "finder | launch | macos,omarchy | f | shift | launch /System/Library/CoreServices/Finder.app",
-    "obsidian | launch | macos,omarchy | o | shift | launch /Applications/Obsidian.app",
-    "music | launch | macos,omarchy | m | shift | launch /System/Applications/Music.app",
-    "music-secondary | launch | macos,omarchy | m | shift,option | open-url https://music.youtube.com",
-    "passwords | launch | macos,omarchy | slash | shift | launch /System/Applications/Passwords.app",
-    "write | launch | macos,omarchy | w | shift | launch /Applications/Typora.app",
-    "youtube | launch | macos,omarchy | y | shift | open-url https://www.youtube.com/feed/subscriptions",
-    "develop | launch | macos,omarchy | d | shift | launch /Applications/Zed.app",
-    "git-client | launch | macos,omarchy | g | shift | launch /Applications/Fork.app",
-    "talk | launch | macos,omarchy | t | shift | open-url https://web.telegram.org",
-    "develop-secondary | launch | macos | d | shift,option | shell /bin/zsh | -c | open \"${$(xcode-select -p)%/Contents/Developer}\"",
-    "system-settings | launch | macos | s | shift | launch /System/Applications/System Settings.app",
-    "talk-secondary | launch | macos | t | shift,option | launch /Applications/WhatsApp.app",
-    "trash | launch | macos | delete | shift | open-trash",
-    "finder-terminal | finder | macos | return | control | finder-open /Applications/Ghostty.app",
-    "finder-develop | finder | macos | d | shift,control | finder-open /Applications/Zed.app",
-    "finder-new-file | finder | macos | f | shift,control | finder-new-file",
-    "finder-write | finder | macos | w | shift,control | finder-open /Applications/Typora.app",
-    "appearance | system | macos | d | control | toggle-appearance",
-    "sleep | system | macos | s | control | sleep",
-    "empty-trash | system | macos | delete | control | empty-trash",
+    "terminal | launch | macos,omarchy | return | command | launch /Applications/Ghostty.app",
+    "browser | launch | macos,omarchy | return | command,shift | launch /Applications/Brave Browser.app",
+    "ai-assistant | launch | macos,omarchy | a | command,shift | open-url https://grok.com",
+    "email | launch | macos,omarchy | e | command,shift | launch /System/Applications/Mail.app",
+    "finder | launch | macos,omarchy | f | command,shift | launch /System/Library/CoreServices/Finder.app",
+    "obsidian | launch | macos,omarchy | o | command,shift | launch /Applications/Obsidian.app",
+    "music | launch | macos,omarchy | m | command,shift | launch /System/Applications/Music.app",
+    "music-secondary | launch | macos,omarchy | m | command,shift,option | open-url https://music.youtube.com",
+    "passwords | launch | macos,omarchy | slash | command,shift | launch /System/Applications/Passwords.app",
+    "write | launch | macos,omarchy | w | command,shift | launch /Applications/Typora.app",
+    "youtube | launch | macos,omarchy | y | command,shift | open-url https://www.youtube.com/feed/subscriptions",
+    "develop | launch | macos,omarchy | d | command,shift | launch /Applications/Zed.app",
+    "git-client | launch | macos,omarchy | g | command,shift | launch /Applications/Fork.app",
+    "talk | launch | macos,omarchy | t | command,shift | open-url https://web.telegram.org",
+    "develop-secondary | launch | macos | d | command,shift,option | shell /bin/zsh | -c | open \"${$(xcode-select -p)%/Contents/Developer}\"",
+    "system-settings | launch | macos | s | command,shift | launch /System/Applications/System Settings.app",
+    "talk-secondary | launch | macos | t | command,shift,option | launch /Applications/WhatsApp.app",
+    "trash | launch | macos | delete | command,shift | open-trash",
+    "finder-terminal | finder | macos | return | command,control | finder-open /Applications/Ghostty.app",
+    "finder-develop | finder | macos | d | command,shift,control | finder-open /Applications/Zed.app",
+    "finder-new-file | finder | macos | f | command,shift,control | finder-new-file",
+    "finder-write | finder | macos | w | command,shift,control | finder-open /Applications/Typora.app",
+    "appearance | system | macos | d | command,control | toggle-appearance",
+    "sleep | system | macos | s | command,control | sleep",
+    "empty-trash | system | macos | delete | command,control | empty-trash",
 ]

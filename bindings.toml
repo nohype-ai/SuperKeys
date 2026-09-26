@@ -1,4 +1,4 @@
-# SuperKeys bindings. Command (⌘) is implicit.
+# SuperKeys bindings. List every modifier, including command.
 # ⌃⌘A is SoundSource. Configure it there. Do not add an audio bind.
 # Edit this file, then run `super-keys` again. A Swift change still needs a rebuild.
 
@@ -11,6 +11,7 @@ id = "terminal"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "return"
+modifiers = ["command"]
 action = "launch"
 app = '/Applications/Ghostty.app'
 
@@ -19,7 +20,7 @@ id = "browser"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "return"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/Applications/Brave Browser.app'
 
@@ -28,7 +29,7 @@ id = "ai-assistant"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "a"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "open-url"
 url = 'https://grok.com'
 
@@ -37,7 +38,7 @@ id = "email"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "e"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/System/Applications/Mail.app'
 
@@ -46,7 +47,7 @@ id = "finder"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "f"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/System/Library/CoreServices/Finder.app'
 
@@ -55,7 +56,7 @@ id = "obsidian"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "o"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/Applications/Obsidian.app'
 
@@ -64,7 +65,7 @@ id = "music"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "m"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/System/Applications/Music.app'
 
@@ -73,7 +74,7 @@ id = "music-secondary"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "m"
-modifiers = ["shift", "option"]
+modifiers = ["command", "shift", "option"]
 action = "open-url"
 url = 'https://music.youtube.com'
 
@@ -82,7 +83,7 @@ id = "passwords"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "slash"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/System/Applications/Passwords.app'
 
@@ -91,7 +92,7 @@ id = "write"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "w"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/Applications/Typora.app'
 
@@ -100,7 +101,7 @@ id = "youtube"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "y"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "open-url"
 url = 'https://www.youtube.com/feed/subscriptions'
 
@@ -109,7 +110,7 @@ id = "develop"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "d"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/Applications/Zed.app'
 
@@ -118,7 +119,7 @@ id = "git-client"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "g"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/Applications/Fork.app'
 
@@ -127,7 +128,7 @@ id = "talk"
 group = "launch"
 scope = ["macos", "omarchy"]
 command = "t"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "open-url"
 url = 'https://web.telegram.org'
 
@@ -138,7 +139,7 @@ id = "develop-secondary"
 group = "launch"
 scope = ["macos"]
 command = "d"
-modifiers = ["shift", "option"]
+modifiers = ["command", "shift", "option"]
 action = "shell"
 argv = ['/bin/zsh', '-c', 'open "${$(xcode-select -p)%/Contents/Developer}"']
 
@@ -147,7 +148,7 @@ id = "system-settings"
 group = "launch"
 scope = ["macos"]
 command = "s"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "launch"
 app = '/System/Applications/System Settings.app'
 
@@ -156,7 +157,7 @@ id = "talk-secondary"
 group = "launch"
 scope = ["macos"]
 command = "t"
-modifiers = ["shift", "option"]
+modifiers = ["command", "shift", "option"]
 action = "launch"
 app = '/Applications/WhatsApp.app'
 
@@ -165,7 +166,7 @@ id = "trash"
 group = "launch"
 scope = ["macos"]
 command = "delete"
-modifiers = ["shift"]
+modifiers = ["command", "shift"]
 action = "open-trash"
 
 # Finder folder — macOS only
@@ -175,7 +176,7 @@ id = "finder-terminal"
 group = "finder"
 scope = ["macos"]
 command = "return"
-modifiers = ["control"]
+modifiers = ["command", "control"]
 action = "finder-open"
 app = '/Applications/Ghostty.app'
 
@@ -184,7 +185,7 @@ id = "finder-develop"
 group = "finder"
 scope = ["macos"]
 command = "d"
-modifiers = ["shift", "control"]
+modifiers = ["command", "shift", "control"]
 action = "finder-open"
 app = '/Applications/Zed.app'
 
@@ -193,7 +194,7 @@ id = "finder-new-file"
 group = "finder"
 scope = ["macos"]
 command = "f"
-modifiers = ["shift", "control"]
+modifiers = ["command", "shift", "control"]
 action = "finder-new-file"
 
 [[bind]]
@@ -201,7 +202,7 @@ id = "finder-write"
 group = "finder"
 scope = ["macos"]
 command = "w"
-modifiers = ["shift", "control"]
+modifiers = ["command", "shift", "control"]
 action = "finder-open"
 app = '/Applications/Typora.app'
 
@@ -212,7 +213,7 @@ id = "appearance"
 group = "system"
 scope = ["macos"]
 command = "d"
-modifiers = ["control"]
+modifiers = ["command", "control"]
 action = "toggle-appearance"
 
 [[bind]]
@@ -220,7 +221,7 @@ id = "sleep"
 group = "system"
 scope = ["macos"]
 command = "s"
-modifiers = ["control"]
+modifiers = ["command", "control"]
 action = "sleep"
 
 [[bind]]
@@ -228,5 +229,5 @@ id = "empty-trash"
 group = "system"
 scope = ["macos"]
 command = "delete"
-modifiers = ["control"]
+modifiers = ["command", "control"]
 action = "empty-trash"
