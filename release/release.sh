@@ -12,15 +12,19 @@ export HOMEBREW_NO_ASK=1
 #          ./release.sh major   (v0.1.2 -> v1.0.0)
 #          First release (no tags): v0.1.0
 #
-# Run on a Mac. Bottles macOS. There is no Linux build: super-keys is AppKit.
+# Run on a Mac. Bottles arm64. There is no Linux build: super-keys is AppKit.
+# The package deployment target is macOS 13, so one arm64 bottle is published
+# for every Homebrew macOS from Ventura through the newest supported release.
+# Intel Macs have no bottle and compile from source.
 #
 #   1. Tag and push the release in the SuperKeys repo
 #   2. Wait for GitHub to make the source tarball available, then sha256 it
 #   3. Generate the Homebrew formula from the template
 #   4. Build from source and bottle for this Mac
-#   5. Put the bottle in homebrew-tap, merge the bottle block into the formula
-#   6. Commit and push homebrew-tap
-#   7. Install/upgrade local super-keys from the bottle
+#   5. Reuse that bottle for every supported arm64 macOS tag
+#   6. Commit the formula and bottles in homebrew-tap
+#   7. Push homebrew-tap
+#   8. Install/upgrade local super-keys from the bottle
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 # This repo lives in nohype-ai/apps/SuperKeys. The tap lives in nohype-ai/company/homebrew-tap.
@@ -173,25 +177,73 @@ cp "$BREW_TAP/Formula/super-keys.rb" "$FORMULA"
 echo "  Bottle written to $BOTTLES"
 echo ""
 
-# Step 5: Commit the bottled formula in the homebrew-tap repo
-echo "Step 5: Committing formula update ..."
+# Step 5: The binary's deployment target is macOS 13 (Package.swift). Publish
+# the arm64 bottle we just built under every tag from Ventura upward so those
+# Macs pour it instead of compiling. Intel stays a source build.
+echo "Step 5: Publishing the arm64 bottle for each supported macOS ..."
+PKG_VERSION="${VERSION#v}"
+SRC_BOTTLE="$BOTTLES/super-keys-${PKG_VERSION}.arm64_golden_gate.bottle.tar.gz"
+if [[ ! -f "$SRC_BOTTLE" ]]; then
+    echo "Error: arm64_golden_gate bottle not found at $SRC_BOTTLE"
+    exit 1
+fi
+TAGS=$(brew ruby -e '
+min = MacOSVersion.new("13")
+newest = MacOSVersion.new(HOMEBREW_MACOS_NEWEST_SUPPORTED)
+MacOSVersion::SYMBOLS.each do |sym, ver|
+  version = MacOSVersion.new(ver)
+  next unless version >= min && version <= newest
+  puts "arm64_#{sym}"
+end
+')
+python3 - "$FORMULA" "$SRC_BOTTLE" "$BOTTLES" "$PKG_VERSION" "$TAGS" <<'PY'
+import hashlib, pathlib, re, shutil, sys
+formula_path, src, bottles, version, tags_blob = sys.argv[1:]
+tags = tags_blob.split()
+if "arm64_golden_gate" not in tags:
+    sys.exit("arm64_golden_gate missing from supported macOS tags")
+digest = hashlib.sha256(pathlib.Path(src).read_bytes()).hexdigest()
+bottles = pathlib.Path(bottles)
+for tag in tags:
+    dest = bottles / f"super-keys-{version}.{tag}.bottle.tar.gz"
+    if dest != pathlib.Path(src):
+        shutil.copyfile(src, dest)
+formula = pathlib.Path(formula_path)
+text = formula.read_text()
+match = re.search(
+    r'^    sha256 (cellar: :\w+, )arm64_golden_gate: "[0-9a-f]+"\n',
+    text,
+    re.M,
+)
+if not match:
+    sys.exit("could not find arm64_golden_gate sha256 line in formula")
+lines = "".join(
+    f'    sha256 {match.group(1)}{tag}: "{digest}"\n' for tag in tags
+)
+formula.write_text(text[:match.start()] + lines + text[match.end():])
+print("  tags: " + " ".join(tags))
+PY
+echo ""
+
+# Step 6: Commit the bottled formula in the homebrew-tap repo
+echo "Step 6: Committing formula update ..."
 cd "$TAP_REPO"
 git add Formula/super-keys.rb Bottles
 git commit -m "Bump super-keys to $VERSION"
 echo "  Committed."
 echo ""
 
-# Step 6: Push the formula repo
-echo "Step 6: Pushing homebrew-tap ..."
+# Step 7: Push the formula repo
+echo "Step 7: Pushing homebrew-tap ..."
 git push
 echo "  Pushed."
 echo ""
 
 echo "=== Release $VERSION complete! ==="
 
-# Step 7: Install from the bottle
+# Step 8: Install from the bottle
 echo ""
-echo "Step 7: Installing bottled super-keys locally ..."
+echo "Step 8: Installing bottled super-keys locally ..."
 git -C "$BREW_TAP" fetch origin
 git -C "$BREW_TAP" reset --hard origin/main
 git -C "$BREW_TAP" clean -fd

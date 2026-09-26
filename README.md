@@ -12,6 +12,8 @@ DHH tried something similar (archived): [OMAMAC](https://github.com/omacom-io/om
 brew install nohype-ai/tap/super-keys
 ```
 
+Apple silicon Macs on macOS 13 and newer get a bottle. Intel Macs compile from source.
+
 [MacStack](https://macstack.dev) depends on this formula, so installing MacStack installs `super-keys` too.
 
 ## Run

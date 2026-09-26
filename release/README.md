@@ -2,7 +2,7 @@
 
 Expects [homebrew-tap](https://github.com/nohype-ai/homebrew-tap) at `nohype-ai/company/homebrew-tap`, with this repo at `nohype-ai/apps/SuperKeys`. The GitHub repo must be public so the tag tarball is fetchable.
 
-**Run `release.sh` on a Mac.** It bottles that Mac. `super-keys` is AppKit, so there is no Linux build. The bottle is committed to `homebrew-tap/Bottles/` and pushed with the formula.
+**Run `release.sh` on a Mac.** It builds one arm64 bottle. The package targets macOS 13, so that bottle is published for every Homebrew macOS from Ventura through the newest supported release. `brew install` pours it. Intel Macs compile from source and need Swift 6.4. There is no Linux build.
 
 ## Release via Script
 
