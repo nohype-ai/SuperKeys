@@ -18,9 +18,15 @@ enum LaunchAgent {
         return String(decoding: bytes, as: UTF8.self).hasSuffix("/launchd")
     }
 
+    static var plistURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/LaunchAgents")
+            .appending(path: "\(label).plist")
+    }
+
     /// Write the login agent for this executable and start it. The caller exits;
     /// launchd starts the process that actually registers hotkeys.
-    static func installAndStart() {
+    static func installAndStart(bindingsPath: String) {
         let executable = executablePath()
         let home = FileManager.default.homeDirectoryForCurrentUser
         let agents = home.appending(path: "Library/LaunchAgents")
@@ -33,9 +39,8 @@ enum LaunchAgent {
             exit(1)
         }
 
-        let plistURL = agents.appending(path: "\(label).plist")
         let log = logs.appending(path: "super-keys.log").path
-        writePlist(at: plistURL, executable: executable, log: log)
+        writePlist(at: plistURL, executable: executable, bindingsPath: bindingsPath, log: log)
 
         unload()
         killOthers()
@@ -51,6 +56,16 @@ enum LaunchAgent {
         unload()
         killOthers()
         print("super-keys stopped")
+    }
+
+    /// Bootout the job and delete its plist so login does not start it again.
+    /// The plist goes first: bootout of this process can kill it immediately.
+    static func unregister() {
+        if FileManager.default.fileExists(atPath: plistURL.path) {
+            try? FileManager.default.removeItem(at: plistURL)
+        }
+        killOthers()
+        unload()
     }
 
     static func unload() {
@@ -82,10 +97,10 @@ enum LaunchAgent {
         return arg0
     }
 
-    private static func writePlist(at url: URL, executable: String, log: String) {
+    private static func writePlist(at url: URL, executable: String, bindingsPath: String, log: String) {
         let object: [String: Any] = [
             "Label": label,
-            "ProgramArguments": [executable, "--agent"],
+            "ProgramArguments": [executable, "--agent", bindingsPath],
             "RunAtLoad": true,
             "KeepAlive": true,
             "ProcessType": "Interactive",

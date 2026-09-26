@@ -2,54 +2,42 @@
 
 | | |
 |--|--|
-| Date | 2026-09-16 |
-| Status | Plan — not implemented |
-| Config | `general/key commands/bindings.toml` |
+| Date | 2026-09-16, revised 2026-09-26 |
+| Status | Implemented |
+| Config | `~/.config/super-keys/bindings.toml` |
 
 Move key → action mappings out of `createHotKeys()` into one TOML file SuperKeys reads at launch.
 
 ## Decisions
 
-- **One file**, sibling of this package: `general/key commands/bindings.toml`. Not in `Sources/`, not in `~/.config`.
-- **Runtime load.** Edit TOML → `./launch-agent.sh`. Swift change → `./build.sh`. No codegen, no file-watch.
-- **⌘ / Super is implicit.** TOML `command` is the key (`a`, `return`, …); `modifiers` are extras (`shift`, `option`, `control`). Putting `command`/`super`/`cmd` in `modifiers` is an error.
-- **Closed actions**, not a script: `launch`, `open-url`, `finder-open`, `finder-new-file`, `shell`, `applescript`, `open-trash`, `empty-trash`, `sleep`, `toggle-appearance`.
-- **`scope`** is `macos` / `omarchy`. SuperKeys registers only binds whose scope contains `macos`. Omarchy consumer is out of this work; the field stays so one file can serve both later.
-- **⌃⌘A stays with SoundSource** (its own prefs). README already says that. Do not add an `audio` bind.
-- **Stay alive on bad config.** Log to stderr, register nothing, `app.run()`. Exiting non-zero would KeepAlive-loop. Bad argv (no path) is exit 2 — the agent always passes the path.
-- **Library:** `dduan/TOMLDecoder` ≥ 0.4.4 (Codable, no C++ interop). Parse/validate in a `SuperKeysCore` library so tests do not touch the `@main` executable.
-- **One PR.** Parser-without-wiring is two sources of truth.
-- **First apply:** `./build.sh` once after pull. `mack update` alone would rewrite the plist onto the *old* binary, which ignores argv.
+- **Default file:** `~/.config/super-keys/bindings.toml`. The first run creates it empty (a comment, no binds) when it is absent. `super-keys /other/bindings.toml` uses that path and does not create the default. The copy in this repo is the example and the test catalog. A personal copy also lives at `NohypeAIStack/macOS/MacStack/super-keys/bindings.toml` for a later MacStack restore. That restore is out of scope.
+- **Runtime load.** Edit the TOML, then run `super-keys` again (same path). Swift change → `swift build`. No codegen, no file-watch.
+- **⌘ / Super is implicit.** `command` is the key (`a`, `return`, …). `modifiers` are extras (`shift`, `option`, `control`). `command` / `super` / `cmd` in `modifiers` is an error.
+- **Closed actions:** `launch`, `open-url`, `finder-open`, `finder-new-file`, `shell`, `applescript`, `open-trash`, `empty-trash`, `sleep`, `toggle-appearance`. Appearance and empty-trash stay AppleScript in Swift. Sleep stays `pmset`. The Xcode bind is `shell` in the TOML.
+- **`scope`** is `macos` / `omarchy`. SuperKeys registers only binds whose scope contains `macos`. An Omarchy-only bind is valid and skipped. The Omarchy consumer is out of this work.
+- **⌃⌘A stays with SoundSource.** No `audio` bind.
+- **Config and registered keys stay the same.** If the file is missing, has no `macos` bind, or does not parse, print the path and the reason, delete the login-agent plist, bootout the job, and exit. No shortcuts stay registered. No `macos` bind exits 0. A broken or missing explicit file exits 2. The launchd process (`--agent`) exits 0 after unloading, because KeepAlive would restart a non-zero exit. The plist is removed first, because bootout can kill that process immediately.
+- **`browser` is optional** unless a bind uses `open-url`. That is what makes a new empty file valid.
+- **Library:** `dduan/TOMLDecoder` ≥ 0.4.4. Parse with `TOMLTable` (every key is visible), then validate. Missing `id` / `action` is a normal validation error. Syntax and type errors print `TOMLError` (line included).
+- **`SuperKeysCore`** holds the types, parser, and path rules. Tests do not link the `@main` executable or HotKey. Core's key allowlist is the ASCII names `HotKey.Key.init?(string:)` accepts. `register` still uses `guard let key = Key(string:)`. If HotKey rejects any macOS bind, the agent is removed and the process exits.
+- **CLI stays.** `super-keys`, `super-keys stop`, `super-keys --foreground`, and launchd's `super-keys --agent`. `--help` / `-h` exit 0. Anything else exits 2. There is no `launch-agent.sh`.
+- **One change set.** The parser is wired in the same change as the file.
 
-Non-goals: Omarchy generator, README generator, live reload, Hyper key, Xcode `.app` / `SMAppService`, ArgumentParser, new launchd label.
-
-## Layout
-
-```
-general/key commands/
-  bindings.toml                 # NEW — source of truth
-  launch-agent.sh               # ProgramArguments [bin, bindings.toml]
-  SuperKeys/
-    Sources/SuperKeysCore/      # types, parse, validate
-    Sources/SuperKeys/          # main, HotKey, existing helpers
-    Tests/SuperKeysCoreTests/
-```
-
-README tables remain documentation. If they disagree with TOML, trust TOML.
+Non-goals: Omarchy generator, README generator, live reload, Hyper key, moving the file into NohypeAIStack, changing `mack update` before this binary is what Homebrew installs.
 
 ## Schema
 
 ```toml
-browser = "/Applications/Brave Browser.app"
+browser = '/Applications/Brave Browser.app'
 
 [[bind]]
 id = "terminal"
-group = "launch"                 # launch | finder | system
+group = "launch"            # launch | finder | system
 scope = ["macos", "omarchy"]
-command = "return"
-# modifiers = ["shift"]          # optional; never include command/super
+command = "return"          # enter is accepted and stored as return
+# modifiers = ["shift"]     # optional; never command/super/cmd
 action = "launch"
-app = "/Applications/Ghostty.app"
+app = '/Applications/Ghostty.app'
 ```
 
 | action | payload |
@@ -62,60 +50,18 @@ app = "/Applications/Ghostty.app"
 | `applescript` | `source` |
 | `open-trash` / `empty-trash` / `sleep` / `toggle-appearance` | none |
 
-Payload for a *different* action is an error (`app` on `sleep` is a typo). Unknown action/key/modifier/group/scope → error. Duplicate `id` or duplicate `(command, modifiers)` → error. Empty `[[bind]]` is valid (register 0).
+A payload for a different action is an error (`app` on `sleep`). Unknown action, key, modifier, group, scope, or field is an error. Duplicate `id` or duplicate `(command, modifiers)` is an error. No `[[bind]]` is valid and registers nothing.
 
-`command` is lowercased. Alias `enter` → `return`. Accept names `HotKey.Key.init?(string:)` understands. Allowlist in Core is a preview; `register` must `guard let key = Key(string:)` — never `!`. If HotKey rejects any bind, register **nothing**.
-
-Decode into a raw snapshot with **optional** fields, then validate. Missing `browser`/`id`/`action` is `.invalid`, not Codable `keyNotFound`. Print underlying `TOMLError` (line if present), not a raw `DecodingError`.
+The 25 shortcuts are the ones previously registered in `SuperKeys.swift`. The test `catalogMatchesTheCurrentCommands` locks that list. ⌃⌘A is a comment in the TOML, not a bind.
 
 ## Wiring
 
-LaunchAgent: `super-keys /abs/path/bindings.toml` (path baked by `launch-agent.sh` the same way the binary path already is). Refuse to rewrite the plist if `bindings.toml` is missing. Same label `ai.nohype.super-keys`.
+`LaunchAgent` writes `ProgramArguments`: `[binary, "--agent", absolute bindings path]`. Same label `ai.nohype.super-keys`.
 
-CLI: one positional path; `--help`/`-h` stdout exit 0; anything else stderr exit 2. No default path.
+`[HotKey]` is held with `withExtendedLifetime` across `app.run()`. HotKey's controller keeps only a weak reference.
 
-Retain `[HotKey]` with `withExtendedLifetime(hotKeys) { app.run() }`. HotKey’s controller holds a weak ref; `_ = hotKeys` can unregister everything before the run loop.
+The plist records `[binary, "--agent", absolute bindings path]`.
 
-`run(_ argv: [String])`: `executableURL = argv[0]`, `arguments = argv.dropFirst()`. Appearance / empty-trash AppleScript stays in Swift (portable action name). Xcode bind stays `shell` in TOML.
+## Apply locally
 
-## Catalog (25 current `HotKey` calls)
-
-⌘/Super implicit. No `audio` / ⌃⌘A.
-
-| id | group | scope | command | mods | action | payload |
-|----|-------|-------|---------|------|--------|---------|
-| terminal | launch | both | return | | launch | Ghostty |
-| browser | launch | both | return | shift | launch | Brave |
-| ai-assistant | launch | both | a | shift | open-url | https://grok.com |
-| email | launch | both | e | shift | launch | Mail |
-| finder | launch | both | f | shift | launch | Finder |
-| obsidian | launch | both | o | shift | launch | Obsidian |
-| music | launch | both | m | shift | launch | Music |
-| music-secondary | launch | both | m | shift, option | open-url | https://music.youtube.com |
-| passwords | launch | both | slash | shift | launch | Passwords |
-| write | launch | both | w | shift | launch | Typora |
-| youtube | launch | both | y | shift | open-url | YouTube subscriptions |
-| develop | launch | both | d | shift | launch | Zed |
-| git-client | launch | both | g | shift | launch | Fork |
-| talk | launch | both | t | shift | open-url | https://web.telegram.org |
-| develop-secondary | launch | macos | d | shift, option | shell | `zsh -c` xcode-select open |
-| system-settings | launch | macos | s | shift | launch | System Settings |
-| talk-secondary | launch | macos | t | shift, option | launch | WhatsApp |
-| trash | launch | macos | delete | shift | open-trash | |
-| finder-terminal | finder | macos | return | control | finder-open | Ghostty |
-| finder-develop | finder | macos | d | shift, control | finder-open | Zed |
-| finder-new-file | finder | macos | f | shift, control | finder-new-file | |
-| finder-write | finder | macos | w | shift, control | finder-open | Typora |
-| appearance | system | macos | d | control | toggle-appearance | |
-| sleep | system | macos | s | control | sleep | |
-| empty-trash | system | macos | delete | control | empty-trash | |
-
-Tests: parse the real `bindings.toml` via `#filePath` walk; expect **exactly these 25 ids**, all with `macos` in scope, unique shortcuts, `audio` absent. Fixtures for invalid TOML / unknown action / duplicate shortcut / missing `browser`.
-
-## Checklist
-
-1. `bindings.toml` with the 25 rows + `browser` + a comment that ⌃⌘A is SoundSource.
-2. `SuperKeysCore` + `TOMLDecoder` + Swift Testing.
-3. SuperKeys: argv, load, dispatch, `withExtendedLifetime`; delete hardcoded `createHotKeys()` list and `browserPath`.
-4. `launch-agent.sh` second ProgramArgument; fail if TOML missing.
-5. README: edit TOML → `./launch-agent.sh`; first-time `./build.sh`; two instances still fight.
+`~/.config/super-keys/bindings.toml` on this machine is filled with the current shortcuts. Run the new `super-keys` once to point launchd at that file. `mack update` still runs the old bottle until the next release, and that old binary ignores the file.
